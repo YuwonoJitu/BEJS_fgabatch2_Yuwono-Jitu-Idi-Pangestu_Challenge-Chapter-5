@@ -1,5 +1,5 @@
 const USER_MODEL = require('../models/user.model');
-const BCRYPT = require('bcrypt');
+const bcrypt = require('bcrypt');
 
 // Mendapatkan daftar semua pengguna
 async function getUser(req, res) {
@@ -10,9 +10,8 @@ async function getUser(req, res) {
             message: 'Users retrieved successfully',
             data: users
         });
-        console.log(users);
-        
     } catch (error) {
+        console.error('Error retrieving users:', error);
         res.status(500).json({
             status: 'error',
             message: 'Failed to retrieve users'
@@ -37,15 +36,20 @@ async function getUserById(req, res) {
             });
         }
     } catch (error) {
+        console.error('Error retrieving user by ID:', error);
         res.status(500).json({
             status: 'error',
             message: 'Failed to retrieve user'
         });
     }
 }
+
+// Membuat pengguna baru
 async function createUser(req, res) {
     try {
         const { name, email, password } = req.body;
+
+        // Validasi input
         if (!name || !email || !password) {
             return res.status(400).json({
                 status: 'error',
@@ -53,7 +57,17 @@ async function createUser(req, res) {
             });
         }
 
-        const hashedPassword = BCRYPT.hashSync(password, 10);
+        // Validasi email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Invalid email format'
+            });
+        }
+
+        // Hash password secara asinkron
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await USER_MODEL.createUser(name, email, hashedPassword);
         res.status(201).json({
@@ -62,6 +76,7 @@ async function createUser(req, res) {
             data: user
         });
     } catch (error) {
+        console.error('Error creating user:', error);
         res.status(500).json({
             status: 'error',
             message: 'Failed to create user'
